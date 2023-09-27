@@ -4,11 +4,15 @@ import com.linkminifier.model.Link;
 import com.linkminifier.repository.LinkRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.crossstore.ChangeSetPersister;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Optional;
 
 @Service
@@ -26,17 +30,40 @@ public class LinkService {
         return minifiedUrl;
     }
 
-    public void updateVisit(String id) throws ChangeSetPersister.NotFoundException {
-        Optional<Link> optionalLink = this.linkRepository.findById(id);
-
-        if (optionalLink.isEmpty()) {
-            throw new ChangeSetPersister.NotFoundException();
-        }
-        Link link = optionalLink.get();
+    public void updateVisit(Link link) throws ChangeSetPersister.NotFoundException {
         link.addOneVisit();
         this.linkRepository.save(link);
     }
 
+    public Map<String, Object> getLink(String minifiedUrl) throws ChangeSetPersister.NotFoundException {
+        Link link = getLinkByMinifiedUrl(minifiedUrl);
+        updateVisit(link);
+
+        Map<String, Object> linkData = new HashMap<>();
+        linkData.put("url", link.getUrl());
+        linkData.put("minifiedUrl", minifiedUrl);
+        return linkData;
+    }
+
+    public Map<String, Object> getLinkAnalytics(String minifiedUrl) throws ChangeSetPersister.NotFoundException {
+        Link link = getLinkByMinifiedUrl(minifiedUrl);
+
+        Map<String, Object> linkData = new HashMap<>();
+
+        linkData.put("url", link.getUrl());
+        linkData.put("minifiedUrl", minifiedUrl);
+        linkData.put("visits", link.getVisits());
+        return linkData;
+    }
+
+    private Link getLinkByMinifiedUrl(String minifiedUrl) throws ChangeSetPersister.NotFoundException {
+        Optional<Link> optionalLink = this.linkRepository.findByminifiedUrl(minifiedUrl);
+
+        if (optionalLink.isEmpty()) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Link Not Found");        }
+
+        return optionalLink.get();
+    }
 
     private static String generateLinkHash(String input) {
         try {

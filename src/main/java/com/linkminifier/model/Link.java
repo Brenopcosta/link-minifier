@@ -22,10 +22,18 @@ public class Link {
     }
 
     public void addOneVisit (){
-        this.setVisits(this.visits++);
+        this.setVisits(this.visits = this.visits + 1);
     }
 
     public void setMinifiedUrl(String minifiedUrl) {
         this.minifiedUrl = minifiedUrl;
+    }
+
+    public String getUrl() {
+        return url;
+    }
+
+    public int getVisits() {
+        return visits;
     }
 }
